@@ -1055,6 +1055,7 @@
     "EIP_1559_SETTINGS_HEADER": "EIP 1559",
     "LEDGER_FIRMWARE_NOTICE": "If you cannot connect to your Ledger, make sure your Ledger firmware is up to date in the Ledger Live application.",
     "MTX_GENERIC_ERROR": "An error occurred. Please try again, and [contact us]($link) if it doesn’t resolve.",
-    "VIEW_TRANSACTION_DETAILS": "View Transaction Details"
+    "VIEW_TRANSACTION_DETAILS": "View Transaction Details",
+    "RESEND_TRANSACTION": "Resend Transaction"
   }
 }
