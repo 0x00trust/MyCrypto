@@ -73,16 +73,25 @@ export function translateRaw(key: string, variables?: { [name: string]: string }
    *  translation key with the variable's value.
    */
   if (variables) {
-    let str = translatedString.replace(/\$/g, '__');
+    try {
+      let str = translatedString.replace(/\$/g, '__');
 
-    Object.keys(variables).forEach((variable) => {
-      const singleWordVariable = variable.replace(/\$/g, '__');
-      const re = new RegExp(`\\b${singleWordVariable}\\b`, 'g');
+      Object.keys(variables).forEach((variable) => {
+        const singleWordVariable = variable.replace(/\$/g, '__');
+        const re = new RegExp(`\\b${singleWordVariable}\\b`, 'g');
 
-      str = str.replace(re, variables[variable]);
-    });
+        // Needs to escape '$' because it is a special replacement operator
+        // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace
+        const escaped = variables[variable].replace(/\$/g, '$$$$');
 
-    return str;
+        str = str.replace(re, escaped);
+      });
+
+      return str;
+    } catch (err) {
+      console.error(err);
+      return key;
+    }
   }
   return translatedString;
 }

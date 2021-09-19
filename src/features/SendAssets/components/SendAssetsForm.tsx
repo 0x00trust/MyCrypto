@@ -2,8 +2,6 @@ import { ChangeEvent, useContext, useEffect, useMemo, useState } from 'react';
 
 import { BigNumber } from '@ethersproject/bignumber';
 import { Button as UIBtn } from '@mycrypto/ui';
-import BigNumberJS from 'bignumber.js';
-import { useFormik } from 'formik';
 import isEmpty from 'lodash/isEmpty';
 import mergeDeepWith from 'ramda/src/mergeDeepWith';
 import styled from 'styled-components';
@@ -29,32 +27,22 @@ import {
   DEFAULT_ASSET_DECIMAL,
   DEFAULT_NETWORK,
   ETHUUID,
-  GAS_LIMIT_LOWER_BOUND,
-  GAS_LIMIT_UPPER_BOUND,
-  GAS_PRICE_GWEI_LOWER_BOUND,
-  GAS_PRICE_GWEI_UPPER_BOUND,
   getKBHelpArticle,
   getWalletConfig,
   KB_HELP_ARTICLE,
   ROUTE_PATHS
 } from '@config';
-import { Fiats, getFiat } from '@config/fiats';
+import { getFiat } from '@config/fiats';
 import { checkFormForProtectTxErrors } from '@features/ProtectTransaction';
 import { ProtectTxShowError } from '@features/ProtectTransaction/components/ProtectTxShowError';
 import { ProtectTxContext } from '@features/ProtectTransaction/ProtectTxProvider';
 import { isEIP1559Supported } from '@helpers';
+import { useGasForm } from '@hooks';
 import { getNonce, useRates } from '@services';
-import {
-  fetchEIP1559PriceEstimates,
-  fetchGasPriceEstimates,
-  getGasEstimate
-} from '@services/ApiService/Gas';
 import {
   isBurnAddress,
   isValidETHAddress,
-  isValidPositiveNumber,
-  TxFeeResponseType,
-  validateTxFee
+  isValidPositiveNumber
 } from '@services/EthService/validators';
 import {
   getAccountBalance,
@@ -75,7 +63,6 @@ import translate, { Trans, translateRaw } from '@translations';
 import {
   Asset,
   ErrorObject,
-  Fiat,
   IAccount,
   IFormikFields,
   InlineMessageType,
@@ -109,12 +96,11 @@ import { useDebounce } from '@vendor';
 import { isERC20Asset, processFormForEstimateGas } from '../helpers';
 import { DataField, GasLimitField, GasPriceField, GasPriceSlider, NonceField } from './fields';
 import './SendAssetsForm.scss';
+import { TxFeeValidation } from './TxFeeValidation';
 import {
   canAffordTX,
   validateAmountField,
   validateDataField,
-  validateGasLimitField,
-  validateGasPriceField,
   validateNonceField
 } from './validators';
 
@@ -128,66 +114,6 @@ const NoMarginCheckbox = styled(Checkbox)`
   margin-bottom: 0;
 `;
 
-const getTxFeeValidation = ({
-  amount = '0',
-  fiat,
-  fee,
-  type
-}: {
-  fiat: Fiat;
-  amount?: string;
-  fee?: string;
-  type: TxFeeResponseType;
-}) => {
-  switch (type) {
-    case 'Warning':
-      return (
-        <InlineMessage
-          type={InlineMessageType.WARNING}
-          value={translate('WARNING_TRANSACTION_FEE', {
-            $amount: `${fiat.symbol}${amount}`,
-            $fee: `${fiat.symbol}${fee}`,
-            $link: getKBHelpArticle(KB_HELP_ARTICLE.WHY_IS_GAS)
-          })}
-        />
-      );
-    case 'Warning-Use-Lower':
-      return (
-        <InlineMessage
-          type={InlineMessageType.WARNING}
-          value={translate('TRANSACTION_FEE_NOTICE', {
-            $fee: `${fiat.symbol}${fee}`,
-            $link: getKBHelpArticle(KB_HELP_ARTICLE.WHY_IS_GAS)
-          })}
-        />
-      );
-    case 'Error-High-Tx-Fee':
-      return (
-        <InlineMessage
-          type={InlineMessageType.ERROR}
-          value={translate('ERROR_HIGH_TRANSACTION_FEE_HIGH', {
-            $fee: `${fiat.symbol}${fee}`,
-            $link: getKBHelpArticle(KB_HELP_ARTICLE.WHY_IS_GAS)
-          })}
-        />
-      );
-    case 'Error-Very-High-Tx-Fee':
-      return (
-        <InlineMessage
-          type={InlineMessageType.ERROR}
-          value={translate('ERROR_HIGH_TRANSACTION_FEE_VERY_HIGH', {
-            $fee: `${fiat.symbol}${fee}`,
-            $link: getKBHelpArticle(KB_HELP_ARTICLE.WHY_IS_GAS)
-          })}
-        />
-      );
-    case 'Invalid':
-    case 'None':
-    default:
-      return <></>;
-  }
-};
-
 const initialFormikValues: IFormikFields = {
   address: {
     value: '',
@@ -198,16 +124,6 @@ const initialFormikValues: IFormikFields = {
   network: {} as Network, // Not a field move to state
   asset: {} as StoreAsset,
   txDataField: '0x',
-  gasEstimates: {
-    // Not a field, move to state
-    fastest: 20,
-    fast: 18,
-    standard: 12,
-    isDefault: false,
-    safeLow: 4,
-    time: Date.now(),
-    chainId: 1
-  },
   gasPriceSlider: '20',
   gasPriceField: '20',
   maxFeePerGasField: '20',
@@ -277,17 +193,13 @@ interface ISendFormProps extends IStepComponentProps {
 export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendFormProps) => {
   const accounts = useSelector(getStoreAccounts);
   const networks = useSelector(selectNetworks);
-  const { getAssetRate, getAssetRateInCurrency } = useRates();
+  const { getAssetRate } = useRates();
   const { getAssetByUUID, assets } = useAssets();
   const { settings } = useSettings();
-  const [isEstimatingGasLimit, setIsEstimatingGasLimit] = useState(false); // Used to indicate that interface is currently estimating gas.
-  const [isEstimatingGasPrice, setIsEstimatingGasPrice] = useState(false);
-  const [gasEstimationError, setGasEstimationError] = useState<string | undefined>(undefined);
   const [isEstimatingNonce, setIsEstimatingNonce] = useState(false); // Used to indicate that interface is currently estimating gas.
   const [isResolvingName, setIsResolvingDomain] = useState(false); // Used to indicate recipient-address is ENS name that is currently attempting to be resolved.
   const [fetchedNonce, setFetchedNonce] = useState(0);
   const [isSendMax, toggleIsSendMax] = useState(false);
-  const [baseFee, setBaseFee] = useState<BigNumberJS | undefined>(undefined);
 
   const userAssets = useSelector(getUserAssets);
   const isDemoMode = useSelector(getIsDemoMode);
@@ -345,7 +257,7 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
               if (decimals > asset.decimal) {
                 return this.createError({
                   message: translateRaw('TOO_MANY_DECIMALS', {
-                    $decimals: asset.decimal
+                    $decimals: asset.decimal.toString()
                   })
                 });
               }
@@ -413,34 +325,6 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
         }
         return true;
       }),
-    gasLimitField: number()
-      .min(GAS_LIMIT_LOWER_BOUND, translateRaw('ERROR_8'))
-      .max(GAS_LIMIT_UPPER_BOUND, translateRaw('ERROR_8'))
-      .required(translateRaw('REQUIRED'))
-      .typeError(translateRaw('ERROR_8'))
-      .test(validateGasLimitField()),
-    gasPriceField: number()
-      .min(GAS_PRICE_GWEI_LOWER_BOUND, translateRaw('LOW_GAS_PRICE_WARNING'))
-      .max(GAS_PRICE_GWEI_UPPER_BOUND, translateRaw('ERROR_10'))
-      .required(translateRaw('REQUIRED'))
-      .typeError(translateRaw('GASPRICE_ERROR'))
-      .test(validateGasPriceField()),
-    maxFeePerGasField: number()
-      .min(GAS_PRICE_GWEI_LOWER_BOUND, translateRaw('LOW_GAS_PRICE_WARNING'))
-      .max(GAS_PRICE_GWEI_UPPER_BOUND, translateRaw('ERROR_10'))
-      .required(translateRaw('REQUIRED'))
-      .typeError(translateRaw('GASPRICE_ERROR'))
-      .test(validateGasPriceField()),
-    maxPriorityFeePerGasField: number()
-      .min(GAS_PRICE_GWEI_LOWER_BOUND, translateRaw('LOW_GAS_PRICE_WARNING'))
-      .max(GAS_PRICE_GWEI_UPPER_BOUND, translateRaw('ERROR_10'))
-      .required(translateRaw('REQUIRED'))
-      .typeError(translateRaw('GASPRICE_ERROR'))
-      .test(validateGasPriceField())
-      .test('check-max', translateRaw('PRIORITY_FEE_MAX_ERROR'), function (value) {
-        const maxFeePerGas = this.parent.maxFeePerGasField;
-        return bigify(maxFeePerGas).gte(value);
-      }),
     nonceField: number()
       .integer(translateRaw('ERROR_11'))
       .min(0, translateRaw('ERROR_11'))
@@ -481,8 +365,19 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
     setFieldError,
     resetForm,
     errors,
-    touched
-  } = useFormik({
+    touched,
+    legacyGasEstimates,
+    isEstimatingGasPrice,
+    isEstimatingGasLimit,
+    gasEstimationError,
+    baseFee,
+    handleGasPriceChange,
+    handleGasLimitChange,
+    handleMaxFeeChange,
+    handleMaxPriorityFeeChange,
+    handleGasPriceEstimation: performGasPriceEstimation,
+    handleGasLimitEstimation
+  } = useGasForm({
     initialValues,
     validationSchema: SendAssetsSchema,
     onSubmit: (fields) => {
@@ -511,8 +406,11 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
 
   useEffect(() => {
     handleNonceEstimate(values.account);
-    handleGasPriceEstimation();
   }, [values.account]);
+
+  useEffect(() => {
+    handleGasPriceEstimation();
+  }, [values.account, values.network]);
 
   useDebounce(
     () => {
@@ -522,31 +420,8 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
     [values.account, values.address, values.amount, values.txDataField]
   );
 
-  const handleGasPriceEstimation = async (network = values.network) => {
-    try {
-      setIsEstimatingGasPrice(true);
-      if (!isEIP1559Supported(network, values.account)) {
-        const data = await fetchGasPriceEstimates(network);
-        setFieldValue('gasEstimates', data);
-        setFieldValue('gasPriceSlider', data.fast.toString());
-        setFieldValue('gasPriceField', data.fast.toString());
-      } else {
-        const data = await fetchEIP1559PriceEstimates(network);
-        setFieldValue(
-          'maxFeePerGasField',
-          data.maxFeePerGas && bigNumGasPriceToViewableGwei(data.maxFeePerGas)
-        );
-        setFieldValue(
-          'maxPriorityFeePerGasField',
-          data.maxPriorityFeePerGas && bigNumGasPriceToViewableGwei(data.maxPriorityFeePerGas)
-        );
-        setBaseFee(data.baseFee);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-    setIsEstimatingGasPrice(false);
-  };
+  const handleGasPriceEstimation = (network = values.network) =>
+    performGasPriceEstimation(network, values.account);
 
   useEffect(() => {
     const asset = values.asset;
@@ -585,7 +460,7 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
     }
   };
 
-  const handleGasEstimate = async (forceEstimate: boolean = false) => {
+  const handleGasEstimate = (forceEstimate: boolean = false) => {
     if (
       values &&
       values.network &&
@@ -596,16 +471,8 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
       isValidPositiveNumber(values.amount) &&
       (values.isAutoGasSet || forceEstimate)
     ) {
-      setIsEstimatingGasLimit(true);
       const finalTx = processFormForEstimateGas(values);
-      try {
-        const gas = await getGasEstimate(values.network, finalTx);
-        setFieldValue('gasLimitField', gas);
-        setGasEstimationError(undefined);
-      } catch (err) {
-        setGasEstimationError(err.reason ? err.reason : err.message);
-      }
-      setIsEstimatingGasLimit(false);
+      handleGasLimitEstimation(values.network, finalTx);
     }
   };
 
@@ -646,11 +513,6 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
   const handleAmountChange = (e: ChangeEvent<HTMLInputElement>) =>
     setFieldValue('amount', e.target.value);
   const handleGasSliderChange = (value: number) => setFieldValue('gasPriceSlider', value);
-  const handleGasPriceChange = (value: string) => setFieldValue('gasPriceField', value);
-  const handleGasLimitChange = (value: string) => setFieldValue('gasLimitField', value);
-  const handleMaxFeeChange = (value: string) => setFieldValue('maxFeePerGasField', value);
-  const handleMaxPriorityFeeChange = (value: string) =>
-    setFieldValue('maxPriorityFeePerGasField', value);
   const handleNonceChange = (value: string) => setFieldValue('nonceField', value);
   const handleDataChange = (value: string) => setFieldValue('txDataField', value);
   const handleAdvancedTransactionToggle = () =>
@@ -666,16 +528,6 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
   const supportsNonce = walletConfig.flags.supportsNonce;
 
   const fiat = getFiat(settings);
-
-  const { type, amount, fee } = validateTxFee(
-    values.amount,
-    getAssetRateInCurrency(baseAsset, Fiats.USD.ticker),
-    getAssetRateInCurrency(baseAsset, fiat.ticker),
-    isERC20Asset(values.asset),
-    values.gasLimitField.toString(),
-    gasPrice,
-    getAssetRateInCurrency(EthAsset, Fiats.USD.ticker)
-  );
 
   const baseAssetRate = (getAssetRate(baseAsset) ?? 0).toString();
 
@@ -840,16 +692,20 @@ export const SendAssetsForm = ({ txConfig, onComplete, protectTxButton }: ISendF
           <GasPriceSlider
             network={values.network}
             gasPrice={values.gasPriceSlider}
-            gasEstimates={values.gasEstimates}
+            gasEstimates={legacyGasEstimates}
             onChange={handleGasSliderChange}
           />
         )}
-        {getTxFeeValidation({
-          type,
-          amount,
-          fee,
-          fiat
-        })}
+        <TxFeeValidation
+          amount={values.amount}
+          baseAsset={baseAsset}
+          asset={values.asset}
+          gasLimit={values.gasLimitField}
+          fiat={fiat}
+          gasPrice={gasPrice}
+          ethAsset={EthAsset}
+          baseFee={baseFee}
+        />
       </fieldset>
       {/* Advanced Options */}
       <div className="SendAssetsForm-advancedOptions">
