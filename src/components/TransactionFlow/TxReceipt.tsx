@@ -92,7 +92,7 @@ const TxReceipt = ({
   resetFlow,
   protectTxButton,
   queryStringsDisabled,
-  isTxStatus,
+  disablePendingState,
   setLabel
 }: ITxReceiptStepProps & RouteComponentProps & Props) => {
   const { getAssetRate } = useRates();
@@ -105,7 +105,9 @@ const TxReceipt = ({
   const [displayDetails, setDisplayDetails] = useState(false);
 
   const transactions = useSelector(selectAccountTxs);
-  const userTx = transactions.find((t) => t.hash === receipt!.hash);
+  const userTx = transactions.find(
+    (t) => t.hash === receipt!.hash && t.baseAsset.networkId === receipt!.baseAsset.networkId
+  );
   const displayTxReceipt = userTx ?? receipt!;
 
   const timestamp = displayTxReceipt.timestamp ?? 0;
@@ -208,7 +210,7 @@ const TxReceipt = ({
 
   const showDetails = () => setDisplayDetails(true);
 
-  if (!isTxStatus && !displayDetails && isType2Receipt(displayTxReceipt) && userTx) {
+  if (!disablePendingState && !displayDetails && isType2Receipt(displayTxReceipt) && userTx) {
     return (
       <TxPendingState
         network={network}
