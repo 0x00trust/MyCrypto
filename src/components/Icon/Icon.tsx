@@ -43,6 +43,7 @@ import navClose from '@assets/icons/navigation/close.svg';
 import navCoinbase from '@assets/icons/navigation/coinbase.svg';
 import navDeployContracts from '@assets/icons/navigation/deploy-contracts.svg';
 import navDesktop from '@assets/icons/navigation/desktop.svg';
+import navDisclaimer from '@assets/icons/navigation/disclaimer.svg';
 import navDiscord from '@assets/icons/navigation/discord.svg';
 import navEns from '@assets/icons/navigation/ens.svg';
 import navEthereum from '@assets/icons/navigation/ethereum.svg';
@@ -64,6 +65,7 @@ import navMigrateLend from '@assets/icons/navigation/migrate-lend.svg';
 import navMigrateRep from '@assets/icons/navigation/migrate-rep.svg';
 import navNew from '@assets/icons/navigation/new.svg';
 import navNewTab from '@assets/icons/navigation/newTab.svg';
+import navNftDashboard from '@assets/icons/navigation/nft-dashboard.svg';
 import navPress from '@assets/icons/navigation/press.svg';
 import navPrivacy from '@assets/icons/navigation/privacy.svg';
 import navQuicknode from '@assets/icons/navigation/quicknode.svg';
@@ -98,10 +100,12 @@ import arrowRight from '@assets/images/arrow-right.svg';
 import zeroxLogo from '@assets/images/credits/credits-0x.svg';
 import coinGeckoLogo from '@assets/images/credits/credits-coingecko.svg';
 import nansenLogo from '@assets/images/credits/credits-nansen.svg';
+import openSeaLogo from '@assets/images/credits/credits-opensea.svg';
 import zapperLogo from '@assets/images/defizap/zapperLogo.svg';
 import ensLogo from '@assets/images/ens/ens-icon.svg';
 import golemLogo from '@assets/images/gol-logo.png';
 import addressBookIcon from '@assets/images/icn-address-book.svg';
+import buyIcon from '@assets/images/icn-buy.svg';
 import check from '@assets/images/icn-check.svg';
 import trezorLgIcon from '@assets/images/icn-connect-trezor-new.svg';
 import experience from '@assets/images/icn-experience.svg';
@@ -124,13 +128,13 @@ import statusBadgeDeclined from '@assets/images/icn-status-badge-declined.svg';
 import statusBadgePending from '@assets/images/icn-status-badge-pending.svg';
 import statusBadgeSuccess from '@assets/images/icn-status-badge-success.svg';
 import swapFlip from '@assets/images/icn-swap-flip.svg';
+import swap from '@assets/images/icn-swap.svg';
 import warning from '@assets/images/icn-warning.svg';
 import lendLogo from '@assets/images/lend-logo.png';
 import linkOutIcon from '@assets/images/link-out.svg';
 import membership from '@assets/images/membership/membership-none.svg';
 import nodeLogo from '@assets/images/node-logo.svg';
 import repLogo from '@assets/images/rep-logo.svg';
-import swap from '@assets/images/swap copy.svg';
 import uniLogo from '@assets/images/uni-logo.png';
 import ledgerIcon from '@assets/images/wallets/ledger.svg';
 import trezorIcon from '@assets/images/wallets/trezor.svg';
@@ -158,6 +162,7 @@ const svgIcons = {
   'link-out': linkOutIcon,
   'swap-flip': swapFlip,
   'action-completed': completedTaskIcon,
+  buy: buyIcon,
 
   /* Tooltips*/
   informational,
@@ -189,6 +194,7 @@ const svgIcons = {
 
   /* Partner Icons */
   nansenLogo,
+  openSeaLogo,
   ensLogo,
   coinGeckoLogo,
   zapperLogo,
@@ -267,7 +273,9 @@ const svgIcons = {
   'nav-migrate-gnt': navMigrateGnt,
   'nav-migrate-ant': navMigrateAnt,
   'nav-migrate-lend': navMigrateLend,
-  'nav-faucet': navFaucet
+  'nav-faucet': navFaucet,
+  'nav-disclaimer': navDisclaimer,
+  'nav-nft': navNftDashboard
 };
 
 const pngIcons = {
@@ -358,7 +366,7 @@ export const isPNGType = (type: TIcon): type is PngIcons =>
 export const getSVGIcon = (type: SvgIcons) => svgIcons[type];
 
 const Icon = ({ type, color, ...props }: Props) => {
-  if (type === 'website' || type === 'faucet-icon') {
+  if (type === 'website' || type === 'faucet-icon' || type === 'nav-nft') {
     return <SStrokeIcon src={svgIcons[type]} color={color} {...props} />;
   } else if (type === 'expandable') {
     return <SExpandableIcon src={svgIcons[type]} color={color} {...props} />;

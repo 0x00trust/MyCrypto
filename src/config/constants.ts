@@ -20,13 +20,19 @@ export const MYC_API = 'https://mycryptoapi.com/api/v1';
 
 export const HISTORY_API = 'https://history.mycryptoapi.com/history';
 
-export const NANSEN_API = 'https://nansen.mycryptoapi.com/v1';
+export const NANSEN_API = 'https://nansen.mycryptoapi.com/v2';
 
 export const CUSTOM_ASSET_API = 'https://assets.mycryptoapi.com/custom';
 
 export const ENS_MANAGER_URL = 'https://app.ens.domains';
 
 export const FAUCET_API = 'https://faucet.mycryptoapi.com';
+
+export const OPENSEA_API = 'https://opensea.mycryptoapi.com/api';
+
+export const OPENSEA_IMAGE_PROXY_API = 'https://opensea.assets.mycryptoapi.com/v1';
+
+export const OPENSEA_IMAGE_PROXY = 'https://mycryptoapi.com/api/v1/images/opensea';
 
 // The URL and site ID for the Matomo analytics instance.
 export const ANALYTICS_API = 'https://analytics.mycryptoapi.com';
@@ -55,10 +61,13 @@ export const DEFAULT_NETWORK_CHAINID = 1;
 export const SECONDS_IN_MONTH = 60 * 60 * 24 * 30;
 
 // Assets that are excluded when loading assets from asset API
-// Spam tokens which return Infinity value for every balance query.
+// Tokens which are non-standard and/or may return Infinity value for every balance query.
 export const EXCLUDED_ASSETS = [
   '1e917c91-e52b-5997-af67-2ffd01843701',
-  '17da00cc-4901-5e04-87e0-f7e3cf9b382a'
+  '17da00cc-4901-5e04-87e0-f7e3cf9b382a',
+  '2e96d50d-af13-5186-8ece-fc33872ab70c',
+  'b1ef1841-6348-584e-a12e-ff2e3bbcd7ff',
+  'd41becc2-9f3a-57e8-a60a-e93ad17d1ea7'
 ];
 
 export const ETH_SCAN_BATCH_SIZE = 300;
