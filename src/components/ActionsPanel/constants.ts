@@ -1,12 +1,14 @@
-import { add, isBefore } from 'date-fns';
+import { add, fromUnixTime, isBefore } from 'date-fns';
 
 import { TIcon } from '@components';
 import {
   ANTv1UUID,
   DAPPNODE_AIRDROP_LINK,
+  ENS_AIRDROP_LINK,
   ETHUUID,
   EXT_URLS,
   FAUCET_NETWORKS,
+  GIV_AIRDROP_LINK,
   GOLEMV1UUID,
   LENDUUID,
   REPV1UUID,
@@ -31,6 +33,7 @@ import {
   ActionButtonProps,
   ClaimSubHead,
   ClaimTable,
+  EnsSubHead,
   MigrationSubHead,
   MigrationTable
 } from './components';
@@ -99,7 +102,7 @@ export const actionTemplates: ActionTemplate[] = [
       component: ActionButton,
       props: {
         content: translateRaw('MIGRATE_REP_ACTION_BUTTON'),
-        to: ROUTE_PATHS.REP_TOKEN_MIGRATION.path,
+        to: ROUTE_PATHS.TOKEN_MIGRATION.path,
         external: false
       }
     },
@@ -152,6 +155,52 @@ export const actionTemplates: ActionTemplate[] = [
     category: ACTION_CATEGORIES.THIRD_PARTY
   },
   {
+    name: ACTION_NAME.CLAIM_ENS,
+    heading: translateRaw('CLAIM_TOKENS_ACTION_HEADING', { $token: 'ENS' }),
+    icon: 'ensLogo',
+    subHeading: ClaimSubHead,
+    body: [translate('CLAIM_TOKENS_ACTION_BODY', { $token: 'ENS' })],
+    filter: ({ claims }: ActionFilters) =>
+      claims[ClaimType.ENS]?.some((c) => c.state === ClaimState.UNCLAIMED),
+    priority: 30,
+    Component: ClaimTable,
+    props: {
+      type: ClaimType.ENS
+    },
+    button: {
+      component: ActionButton,
+      props: {
+        content: translateRaw('CLAIM_TOKENS_ACTION_BUTTON'),
+        to: ENS_AIRDROP_LINK,
+        external: true
+      }
+    },
+    category: ACTION_CATEGORIES.THIRD_PARTY
+  },
+  {
+    name: ACTION_NAME.CLAIM_GIV,
+    heading: translateRaw('CLAIM_TOKENS_ACTION_HEADING', { $token: 'GIV' }),
+    icon: 'givLogo',
+    subHeading: ClaimSubHead,
+    body: [translate('CLAIM_TOKENS_ACTION_BODY', { $token: 'GIV' })],
+    filter: ({ claims }: ActionFilters) =>
+      claims[ClaimType.GIV]?.some((c) => c.state === ClaimState.UNCLAIMED),
+    priority: 30,
+    Component: ClaimTable,
+    props: {
+      type: ClaimType.GIV
+    },
+    button: {
+      component: ActionButton,
+      props: {
+        content: translateRaw('CLAIM_TOKENS_ACTION_BUTTON'),
+        to: GIV_AIRDROP_LINK,
+        external: true
+      }
+    },
+    category: ACTION_CATEGORIES.THIRD_PARTY
+  },
+  {
     name: ACTION_NAME.MIGRATE_LEND,
     heading: translateRaw('MIGRATE_LEND_ACTION_HEADING'),
     icon: 'lend-logo',
@@ -165,7 +214,7 @@ export const actionTemplates: ActionTemplate[] = [
       component: ActionButton,
       props: {
         content: translateRaw('MIGRATE_REP_ACTION_BUTTON'),
-        to: ROUTE_PATHS.AAVE_TOKEN_MIGRATION.path,
+        to: ROUTE_PATHS.TOKEN_MIGRATION.path,
         external: false
       }
     },
@@ -185,7 +234,7 @@ export const actionTemplates: ActionTemplate[] = [
       component: ActionButton,
       props: {
         content: translateRaw('MIGRATE_REP_ACTION_BUTTON'),
-        to: ROUTE_PATHS.ANT_TOKEN_MIGRATION.path,
+        to: ROUTE_PATHS.TOKEN_MIGRATION.path,
         external: false
       }
     },
@@ -205,7 +254,7 @@ export const actionTemplates: ActionTemplate[] = [
       component: ActionButton,
       props: {
         content: translateRaw('MIGRATE_REP_ACTION_BUTTON'),
-        to: ROUTE_PATHS.GOLEM_TOKEN_MIGRATION.path,
+        to: ROUTE_PATHS.TOKEN_MIGRATION.path,
         external: false
       }
     },
@@ -214,10 +263,11 @@ export const actionTemplates: ActionTemplate[] = [
   {
     name: ACTION_NAME.RENEW_ENS,
     heading: translateRaw('RENEW_ENS_ACTION_HEADING'),
+    subHeading: EnsSubHead,
     icon: 'ensLogo',
     filter: ({ ensOwnershipRecords }: ActionFilters) =>
       ensOwnershipRecords.some((r) =>
-        isBefore(new Date(r.expiryDate), add(new Date(), { days: 60 }))
+        isBefore(fromUnixTime(parseInt(r.expiryDate, 10)), add(new Date(), { days: 60 }))
       ),
     body: [translate('RENEW_ENS_ACTION_BODY')],
     priority: 30,
@@ -240,23 +290,6 @@ export const actionTemplates: ActionTemplate[] = [
     filter: ({ accounts }: ActionFilters) => !accounts.some((c) => isHardwareWallet(c.wallet)),
     priority: 30,
     category: ACTION_CATEGORIES.SECURITY
-  },
-  {
-    name: ACTION_NAME.MYC_MEMBERSHIP,
-    heading: translateRaw('MYC_MEMBERSHIP_ACTION_HEADING'),
-    icon: 'membership',
-    body: [translate('MYC_MEMBERSHIP_ACTION_BODY')],
-    filter: ({ isMyCryptoMember }: ActionFilters) => !isMyCryptoMember,
-    priority: 0,
-    button: {
-      component: ActionButton,
-      props: {
-        content: translateRaw('MYC_MEMBERSHIP_ACTION_BUTTON'),
-        to: ROUTE_PATHS.MYC_MEMBERSHIP.path,
-        external: false
-      }
-    },
-    category: ACTION_CATEGORIES.SELF_LOVE
   },
   {
     name: ACTION_NAME.ADD_ACCOUNT,

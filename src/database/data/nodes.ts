@@ -169,15 +169,6 @@ export const NODES_CONFIG: { [key in NetworkId]: StaticNodeConfig[] } = {
     }
   ],
 
-  DEXON: [
-    {
-      name: NetworkUtils.makeNodeName('DEXON', 'dexon'),
-      type: NodeType.RPC,
-      service: 'dexon.org',
-      url: 'https://mainnet-rpc.dexon.org'
-    }
-  ],
-
   EGEM: [
     {
       name: NetworkUtils.makeNodeName('EGEM', 'egem'),
@@ -250,15 +241,6 @@ export const NODES_CONFIG: { [key in NetworkId]: StaticNodeConfig[] } = {
     }
   ],
 
-  REOSC: [
-    {
-      name: NetworkUtils.makeNodeName('REOSC', 'reosc.io'),
-      type: NodeType.RPC,
-      service: 'remote.reosc.io',
-      url: 'https://remote.reosc.io:3000'
-    }
-  ],
-
   RSK_TESTNET: [
     {
       name: NetworkUtils.makeNodeName('RSK_TESTNET', 'rsk_testnet'),
@@ -327,15 +309,6 @@ export const NODES_CONFIG: { [key in NetworkId]: StaticNodeConfig[] } = {
     }
   ],
 
-  ERE: [
-    {
-      name: NetworkUtils.makeNodeName('ERE', 'ethercore'),
-      type: NodeType.RPC,
-      service: 'ethercore.io',
-      url: 'https://rpc.ethercore.io'
-    }
-  ],
-
   VOLTA: [
     {
       name: NetworkUtils.makeNodeName('VOLTA', 'volta-rpc.energyweb.org'),
@@ -391,6 +364,12 @@ export const NODES_CONFIG: { [key in NetworkId]: StaticNodeConfig[] } = {
       type: NodeType.RPC,
       service: 'xdaichain.com',
       url: 'https://rpc.xdaichain.com/'
+    },
+    {
+      name: NetworkUtils.makeNodeName('xDAI', 'poanetwork.dev'),
+      type: NodeType.RPC,
+      service: 'poanetwork.dev',
+      url: 'https://xdai.poanetwork.dev/'
     }
   ],
   SmartChain: [
@@ -462,6 +441,22 @@ export const NODES_CONFIG: { [key in NetworkId]: StaticNodeConfig[] } = {
       type: NodeType.RPC,
       service: 'Hecochain.com',
       url: 'https://http-mainnet.hecochain.com/'
+    }
+  ],
+  XDC: [
+    {
+      name: NetworkUtils.makeNodeName('XDC', 'blocksscan.io'),
+      type: NodeType.RPC,
+      service: 'BlocksScan.io',
+      url: 'https://mycryptorpc.blocksscan.io'
+    }
+  ],
+  XDCApothem: [
+    {
+      name: NetworkUtils.makeNodeName('XDCApothem', 'Apothem.blocksscan.io'),
+      type: NodeType.RPC,
+      service: 'Apothem.BlocksScan.io',
+      url: 'https://mycryptoarpc.blocksscan.io'
     }
   ]
 };

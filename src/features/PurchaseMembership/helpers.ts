@@ -1,6 +1,6 @@
 import { AddressZero } from '@ethersproject/constants';
 
-import { DEFAULT_ASSET_DECIMAL } from '@config';
+import { DEFAULT_ASSET_DECIMAL, donationAddressMap } from '@config';
 import { formatApproveTx, makeTxFromForm } from '@helpers';
 import { getAssetByUUID } from '@services';
 import { UnlockToken } from '@services/EthService/contracts';
@@ -31,10 +31,12 @@ export const createPurchaseTx = (payload: MembershipSimpleTxFormFull): Partial<I
   const membershipSelected = payload.membershipSelected;
 
   const weiPrice = toWei(membershipSelected.price, payload.asset.decimal ?? DEFAULT_ASSET_DECIMAL);
+  // Referrals are disabled for now as per Unlock advice - usually we only want referrals enabled on cheaper networks since the referral logic adds to the gas cost
+  const useReferral = false;
   const data = UnlockToken.purchase.encodeInput({
     _value: weiPrice,
     _recipient: payload.account.address,
-    _referrer: AddressZero,
+    _referrer: useReferral ? donationAddressMap.ETH : AddressZero,
     _data: []
   }) as ITxData;
 
